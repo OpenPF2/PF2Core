@@ -64,10 +64,15 @@ TArray<TScriptInterface<IPF2PlayerControllerInterface>> UPF2ModeOfPlayRuleSetBas
 
 TArray<TScriptInterface<IPF2CharacterInterface>> UPF2ModeOfPlayRuleSetBase::GetPlayerControlledCharacters() const
 {
-	return PF2ArrayUtilities::Map<TScriptInterface<IPF2CharacterInterface>>(
+	return PF2ArrayUtilities::Reduce<TArray<TScriptInterface<IPF2CharacterInterface>>>(
 		this->GetPlayerControllers(),
-		[](const TScriptInterface<IPF2PlayerControllerInterface> PlayerController)
+		TArray<TScriptInterface<IPF2CharacterInterface>>(),
+		[](TArray<TScriptInterface<IPF2CharacterInterface>>      Characters,
+		   const TScriptInterface<IPF2PlayerControllerInterface> PlayerController)
 		{
-			return PlayerController->GetControlledCharacter();
-		});
+			Characters.Append(PlayerController->GetControlledCharacters());
+
+			return Characters;
+		}
+	);
 }

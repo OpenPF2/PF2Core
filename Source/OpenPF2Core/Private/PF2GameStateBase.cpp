@@ -73,15 +73,6 @@ void APF2GameStateBase::OnReceivedModeOfPlay()
 
 		if (PF2PlayerController != nullptr)
 		{
-			UE_LOG(
-				LogPf2Core,
-				VeryVerbose,
-				TEXT("[%s] Notifying player controller ('%s') that mode of play has changed to '%s'."),
-				*(PF2LogUtilities::GetHostNetId(World)),
-				*(PlayerController->GetName()),
-				*(PF2EnumUtilities::ToString(this->ModeOfPlay))
-			);
-
 			PF2PlayerController->HandleModeOfPlayChanged(this->ModeOfPlay);
 		}
 	}

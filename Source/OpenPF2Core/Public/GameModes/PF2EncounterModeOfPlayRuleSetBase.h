@@ -75,7 +75,7 @@ protected:
 	/**
 	 * The queue of actions for each character in the encounter.
 	 */
-	TMultiMap<const IPF2CharacterInterface*, IPF2QueuedActionInterface *> CharacterQueues;
+	TMultiMap<IPF2CharacterInterface*, IPF2QueuedActionInterface *> CharacterQueues;
 
 	/**
 	 * A map of initiative to characters.
@@ -286,6 +286,14 @@ protected:
 	void RemoveQueuedActionForCharacter(
 		const TScriptInterface<IPF2CharacterInterface>&    Character,
 		const TScriptInterface<IPF2QueuedActionInterface>& Action);
+
+	/**
+	 * Cancels and clears all actions queued for all characters.
+	 *
+	 * This is typically fired right before a transition out of an encounter.
+	 */
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
+	void CancelQueuedActionsForAllCharacters();
 
 	/**
 	 * Performs the next action in the specified character's queue of actions (if there is one).

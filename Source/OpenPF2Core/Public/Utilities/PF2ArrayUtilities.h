@@ -28,7 +28,7 @@ namespace PF2ArrayUtilities
 	{
 		TArray<Out> Result;
 
-		for (const auto& Element : Elements)
+		for (const In& Element : Elements)
 		{
 			const Out MappingOutput = Callable(Element);
 
@@ -75,5 +75,51 @@ namespace PF2ArrayUtilities
 		}
 
 		return PreviousValue;
+	}
+
+	/**
+	 * Filters out null values from an array.
+	 *
+	 * The original array is not modified.
+	 *
+	 * @param Elements
+	 *	The array of values to filter.
+	 *
+	 * @return
+	 *	A new array containing all the values of the original array that were not null.
+	*/
+	template <typename In>
+	TArray<In> Filter(const TArray<In> Elements)
+	{
+		return Filter<In>(
+			Elements,
+			[](const In Element)
+			{
+				return Element != nullptr;
+			}
+		);
+	}
+
+	/**
+	 * Filters the values of an array using a predicate function.
+	 *
+	 * The predicate receives each value of the array and is expected to return true if a value should be included, or
+	 * false if it should be omitted.
+	 *
+	 * The original array is not modified.
+	 *
+	 * @param Elements
+	 *	The array of values to filter.
+	 * @param Callable
+	 *	The predicate function/lambda invoked for each element of the array. This function is expected to take in a
+	 *	parameter of type "In" and return a boolean.
+	 *
+	 * @return
+	 *	A new array containing all the values of the original array for which the callable returned "true".
+	 */
+	template <typename In, typename Func>
+	TArray<In> Filter(const TArray<In> Elements, const Func Callable)
+	{
+		return Elements.FilterByPredicate(Callable);
 	}
 }

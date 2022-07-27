@@ -32,14 +32,17 @@ public:
 	// Public Methods
 	// =================================================================================================================
 	/**
-	 * Gets the character that this player controller is controlling.
+	 * Gets the character(s) that this player controller has the ability to control or possess.
+	 *
+	 * For a single-player game that supports parties or squads, this may include both the character that the player
+	 * is actively controlling as well as any controllable character in this player's party or squad. Otherwise, this
+	 * will return only a single character per controller.
 	 *
 	 * @return
-	 *	Either the controller character (if this controller is controlling a PF2 character), or a null character
-	 *	reference.
+	 *	All of the characters that this player controller can control.
 	 */
 	UFUNCTION(BlueprintCallable, Category="OpenPF2|Player Controllers")
-	virtual TScriptInterface<IPF2CharacterInterface> GetControlledCharacter() = 0;
+	virtual TArray<TScriptInterface<IPF2CharacterInterface>> GetControlledCharacters() = 0;
 
 	/**
 	 * Gets the player controller that is implementing this interface.

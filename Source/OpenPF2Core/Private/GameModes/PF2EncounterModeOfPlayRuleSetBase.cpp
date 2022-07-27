@@ -280,6 +280,30 @@ void UPF2EncounterModeOfPlayRuleSetBase::RemoveQueuedActionForCharacter(
 	}
 }
 
+void UPF2EncounterModeOfPlayRuleSetBase::CancelQueuedActionsForAllCharacters()
+{
+	// Have to make a copy since we're going to be modifying as we iterate.
+	TMultiMap<IPF2CharacterInterface*, IPF2QueuedActionInterface*> CharacterQueuesCopy = this->CharacterQueues;
+
+	for (const TTuple<IPF2CharacterInterface*, IPF2QueuedActionInterface*>& CharacterAction : CharacterQueuesCopy)
+	{
+		IPF2CharacterInterface*    Character    = CharacterAction.Key;
+		IPF2QueuedActionInterface* QueuedAction = CharacterAction.Value;
+
+		// Let the action know its canceled.
+		QueuedAction->CancelAction();
+
+		// Fire all removal callbacks.
+		this->RemoveQueuedActionForCharacter(
+			PF2InterfaceUtilities::ToScriptInterface(Character),
+			PF2InterfaceUtilities::ToScriptInterface(QueuedAction)
+		);
+	}
+
+	// Ensure the queues are completely reset.
+	this->CharacterQueues.Empty();
+}
+
 EPF2AbilityActivationResult UPF2EncounterModeOfPlayRuleSetBase::ExecuteNextQueuedActionForCharacter(
 	const TScriptInterface<IPF2CharacterInterface>& Character)
 {
@@ -336,7 +360,7 @@ void UPF2EncounterModeOfPlayRuleSetBase::PeekNextQueuedActionForCharacter(
 	const TScriptInterface<IPF2CharacterInterface>& Character,
 	TScriptInterface<IPF2QueuedActionInterface>&    NextAction) const
 {
-	const IPF2CharacterInterface*      PF2Character     = PF2InterfaceUtilities::FromScriptInterface(Character);
+	IPF2CharacterInterface*            PF2Character = PF2InterfaceUtilities::FromScriptInterface(Character);
 	TArray<IPF2QueuedActionInterface*> CharacterActions;
 
 	this->CharacterQueues.MultiFind(PF2Character, CharacterActions);

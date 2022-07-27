@@ -44,8 +44,12 @@ For the purposes of the OGL, the following definitions apply:
     what portion of the material is Open Game Content.
 
 No portion of this work other than the material designated as Open Game Content
-may be reproduced in any form without written permission from the authors, except
-as allowed under the MPL or UE EULA.
+may be reproduced in any form without written permission from the authors, 
+except as allowed under the MPL or UE EULA.
+
+Portions of code in this project were adapted from the "Real-Time Strategy 
+Plugin for Unreal Engine 4" by Nick Pruehs (https://github.com/npruehs/ue4-rts),
+provided under the MIT License. Copyright (c) 2017 Nick Pruehs.
 
 ================================================================================
 Mozilla Public License Version 2.0

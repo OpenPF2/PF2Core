@@ -83,6 +83,8 @@ void UPF2AbilityTask_WaitForInitiativeTurn::ExternalCancel()
 {
 	if (!this->WasActivatedOrCanceled())
 	{
+		this->ActivationOutcome = EPF2AbilityActivationResult::Cancelled;
+
 		if (this->ShouldBroadcastAbilityTaskDelegates())
 		{
 			this->OnCancelled.Broadcast();
