@@ -20,7 +20,7 @@ float UPF2AbilityModifierCalculationBase::DoCalculation(
 	AbilityModifier = UPF2CharacterStatLibrary::CalculateAbilityModifier(AbilityScore);
 
 	UE_LOG(
-		LogPf2Core,
+		LogPf2CoreStats,
 		VeryVerbose,
 		TEXT("Calculated ability modifier for attribute ('%s': %f): %f"),
 		*(AbilityAttribute.GetName()),

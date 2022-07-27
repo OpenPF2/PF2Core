@@ -16,7 +16,7 @@
 // Forward Declarations (to break recursive dependencies)
 // =====================================================================================================================
 class IPF2CharacterInterface;
-class IPF2CharacterAbilitySystemComponentInterface;
+class IPF2CharacterAbilitySystemInterface;
 class UPF2AttributeSet;
 
 // =====================================================================================================================
@@ -126,7 +126,7 @@ namespace PF2GameplayAbilityUtilities
 	);
 
 	/**
-	 * Gets the ASC of the given actor, as an implementation of IPF2CharacterAbilitySystemComponentInterface.
+	 * Gets the ASC of the given actor, as an implementation of IPF2CharacterAbilitySystemInterface.
 	 *
 	 * In development builds, the ASC is checked to ensure that it is non-null and implements the interface.
 	 *
@@ -137,7 +137,7 @@ namespace PF2GameplayAbilityUtilities
 	 *	A pointer to the IPF2CharacterAbilitySystemComponentInterface interface of the Ability System Component for the
 	 *	actor described by the given info.
 	 */
-	OPENPF2CORE_API FORCEINLINE IPF2CharacterAbilitySystemComponentInterface* GetCharacterAbilitySystemComponent(
+	OPENPF2CORE_API FORCEINLINE IPF2CharacterAbilitySystemInterface* GetCharacterAbilitySystemComponent(
 		const FGameplayAbilityActorInfo* ActorInfo);
 
 	/**

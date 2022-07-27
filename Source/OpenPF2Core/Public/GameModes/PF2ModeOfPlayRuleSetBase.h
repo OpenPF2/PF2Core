@@ -9,8 +9,6 @@
 #include "PF2ModeOfPlayRuleSetInterface.h"
 #include "PF2PlayerControllerInterface.h"
 
-#include "Abilities/PF2ActionQueueResult.h"
-
 #include "PF2ModeOfPlayRuleSetBase.generated.h"
 
 /**
@@ -20,22 +18,17 @@
  */
 UCLASS(Abstract, Blueprintable)
 // ReSharper disable once CppClassCanBeFinal
-class OPENPF2CORE_API UPF2ModeOfPlayRuleSetBase : public UObject, public IPF2ModeOfPlayRuleSetInterface
+class OPENPF2CORE_API APF2ModeOfPlayRuleSetBase : public AActor, public IPF2ModeOfPlayRuleSetInterface
 {
 	GENERATED_BODY()
 
 public:
 	// =================================================================================================================
-	// Public Methods - UPF2ModeOfPlayRuleSetBase Implementation
+	// Public Methods - APF2ModeOfPlayRuleSetBase Implementation
 	// =================================================================================================================
-	virtual FPF2QueuedActionHandle OnQueueAction_Implementation(
-		const TScriptInterface<IPF2CharacterInterface>&    Character,
-		const TScriptInterface<IPF2QueuedActionInterface>& Action,
-		OUT EPF2ActionQueueResult&                         OutQueueResult) override;
-
-	virtual void OnCancelQueuedAction_Implementation(
-		const TScriptInterface<IPF2CharacterInterface>&    Character,
-		const TScriptInterface<IPF2QueuedActionInterface>& Action) override;
+	virtual EPF2CommandExecuteOrQueueResult AttemptToExecuteOrQueueCommand_Implementation(
+		const TScriptInterface<IPF2CharacterInterface>&        Character,
+		const TScriptInterface<IPF2CharacterCommandInterface>& Command) override;
 
 protected:
 	// =================================================================================================================

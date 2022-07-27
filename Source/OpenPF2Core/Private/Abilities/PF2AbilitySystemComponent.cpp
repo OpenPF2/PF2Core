@@ -9,6 +9,7 @@
 
 #include "PF2CharacterConstants.h"
 #include "PF2CharacterInterface.h"
+
 #include "Utilities/PF2ArrayUtilities.h"
 #include "Utilities/PF2EnumUtilities.h"
 

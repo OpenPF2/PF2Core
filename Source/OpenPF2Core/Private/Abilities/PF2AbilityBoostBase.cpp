@@ -7,7 +7,7 @@
 
 #include "Abilities/PF2AbilityBoostRuleOptionValidator.h"
 #include "Abilities/PF2AttributeSet.h"
-#include "Abilities/PF2CharacterAbilitySystemComponentInterface.h"
+#include "Abilities/PF2CharacterAbilitySystemInterface.h"
 #include "Abilities/PF2GameplayAbilityTargetData_BoostAbility.h"
 
 UPF2AbilityBoostBase::UPF2AbilityBoostBase()
@@ -57,7 +57,7 @@ void UPF2AbilityBoostBase::ActivateAbility(
 	{
 		const TSet<EPF2CharacterAbilityScoreType> BoostSelections = this->GetBoostSelections(TriggerEventData);
 
-		IPF2CharacterAbilitySystemComponentInterface* CharacterAsc =
+		IPF2CharacterAbilitySystemInterface* CharacterAsc =
 			PF2GameplayAbilityUtilities::GetCharacterAbilitySystemComponent(ActorInfo);
 
 		UPF2AbilityBoostRuleOptionValidator* Validator = NewObject<UPF2AbilityBoostRuleOptionValidator>();

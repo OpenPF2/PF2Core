@@ -9,6 +9,14 @@
 
 #include "PF2GameplayAbilityInterface.generated.h"
 
+// =====================================================================================================================
+// Forward Declarations (to break recursive dependencies)
+// =====================================================================================================================
+class UTexture2D;
+
+// =====================================================================================================================
+// Normal Declarations
+// =====================================================================================================================
 UINTERFACE(MinimalAPI, meta=(CannotImplementInterfaceInBlueprint))
 class UPF2GameplayAbilityInterface : public UInterface
 {
@@ -27,49 +35,39 @@ public:
 	// Public Methods
 	// =================================================================================================================
 	/**
-	 * Notifies this GA that it has been queued.
+	 * Gets an icon to represent this ability, for whenever it is displayed to players/users.
 	 *
-	 * Depending upon the GA configuration, after this call, the ability may allow other abilities of the same type or
-	 * with the same blocking tags to still be activated. For example, the ability may allow a playable character to
-	 * queue up the same action multiple times before and during their initiative turn, since each invocation of the
-	 * ability will not happen concurrently.
-	 *
-	 * The ability may even be configured allow itself to be activated even if its cost check is not satisfied as long
-	 * as the character cannot execute the ability immediately. This allows the player to queue up or execute this
-	 * ability even if they don't satisfy the cost (e.g., not enough action points) right this moment. The cost is still
-	 * taken into consideration at the time that the ability is de-queued and executed, so this only affects how costs
-	 * work at the time they are being activated for queueing.
-	 *
-	 * This automatically gets called by Gameplay Ability Tasks like WaitForInitiativeTurn when an ability has been
-	 * queued/suspended.
+	 * @return
+	 *	A graphical representation of this ability.
 	 */
-	virtual void OnQueued() = 0;
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Gameplay Abilities")
+	virtual UTexture2D* GetAbilityIcon() const = 0;
 
 	/**
-	 * Notifies this GA that it has been de-queued and is about to be executed.
+	 * Gets the name of this ability, for whenever it is displayed to players/users.
 	 *
-	 * Depending upon the GA configuration, before this call, the ability may have allowed other abilities of the same
-	 * type or with the same blocking tags to still be activated while it was queued. For example, the ability might
-	 * have allowed a playable character to queue up the same action multiple times before and during their initiative
-	 * turn, since each invocation of the ability will not happen concurrently. This call toggles that off.
-	 *
-	 * The ability may even have been configured to allow itself to be activated even if its cost check was not
-	 * satisfied as long as the character could not execute the ability immediately. After this call, that is toggled
-	 * off to prevent the player from queuing up or activating this ability if they don't satisfy the cost (e.g., if
-	 * they are out of action points).
-	 *
-	 * This automatically gets called by Gameplay Ability Tasks like WaitForInitiativeTurn when an ability has been
-	 * de-queued/resumed.
+	 * @return
+	 *	A short textual description of this ability.
 	 */
-	virtual void OnDequeued() = 0;
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Gameplay Abilities")
+	virtual FText GetAbilityLabel() const = 0;
 
 	/**
-	 * Forces this ability to not enforce blocking tags on this ability.
+	 * Gets the description of this ability, for whenever it is displayed to players/users.
+	 *
+	 * @return
+	 *	A long textual description of this ability.
 	 */
-	virtual void ForceSuspendBlocking() = 0;
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Gameplay Abilities")
+	virtual FText GetAbilityDescription() const = 0;
 
 	/**
-	 * Resumes enforcement of blocking tags on this ability.
+	 * Gets the default human-friendly input action that triggers this ability (if applicable).
+	 * If left blank, this ability has no default binding and must be assigned a binding at run-time.
+	 *
+	 * @return
+	 *	The name of the input action that should trigger this ability by default.
 	 */
-	virtual void ForceResumeBlocking() = 0;
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Gameplay Abilities")
+	virtual FName GetDefaultInputActionMapping() const = 0;
 };

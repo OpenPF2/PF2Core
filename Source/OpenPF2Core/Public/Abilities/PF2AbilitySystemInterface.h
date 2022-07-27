@@ -9,10 +9,10 @@
 #include <GameplayTagContainer.h>
 #include <UObject/Interface.h>
 
-#include "PF2AbilitySystemComponentInterface.generated.h"
+#include "PF2AbilitySystemInterface.generated.h"
 
 UINTERFACE(MinimalAPI, BlueprintType, meta=(CannotImplementInterfaceInBlueprint))
-class UPF2AbilitySystemComponentInterface : public UInterface
+class UPF2AbilitySystemInterface : public UInterface
 {
     GENERATED_BODY()
 };
@@ -28,7 +28,7 @@ class UPF2AbilitySystemComponentInterface : public UInterface
  * interact closely with the ASC on the character to have an effect. So, in OpenPF2, that logic lives in ASCs instead to
  * cut down on the number of concerns character base classes are managing.
  */
-class OPENPF2CORE_API IPF2AbilitySystemComponentInterface
+class OPENPF2CORE_API IPF2AbilitySystemInterface
 {
     GENERATED_BODY()
 
@@ -44,7 +44,7 @@ public:
 	 * @return
 	 *	This ASC, as a UObject.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual UAbilitySystemComponent* ToAbilitySystemComponent() = 0;
 
 	/**
@@ -61,7 +61,7 @@ public:
 	 * @param Effect
 	 *	The gameplay effect to add under the default weight of the GE.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void AddPassiveGameplayEffect(const TSubclassOf<UGameplayEffect> Effect) = 0;
 
 	/**
@@ -78,7 +78,7 @@ public:
 	 * @param Effect
 	 *	The gameplay effect to add under the given weight.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void AddPassiveGameplayEffectWithWeight(
 		const FName WeightGroup,
 		const TSubclassOf<UGameplayEffect> Effect
@@ -102,19 +102,19 @@ public:
 	 *
 	 * If passive GEs are currently active on this ASC, they will be removed and deactivated as part of this call.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void RemoveAllPassiveGameplayEffects() = 0;
 
 	/**
 	 * Activates Gameplay Effects that should remain passively applied on this ASC until deactivated.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void ActivateAllPassiveGameplayEffects() = 0;
 
 	/**
 	 * Removes all passive Gameplay Effects that were previously activated on this ASC.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void DeactivateAllPassiveGameplayEffects() = 0;
 
 	/**
@@ -128,7 +128,7 @@ public:
 	 * @return
 	 *	The names of all weight groups that were activated.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual TSet<FName> ActivatePassiveGameplayEffectsAfter(const FName WeightGroup) = 0;
 
 	/**
@@ -143,7 +143,7 @@ public:
 	 * @return
 	 *	The names of all weight groups that were deactivated.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual TSet<FName> DeactivatePassiveGameplayEffectsAfter(const FName WeightGroup) = 0;
 
 	/**
@@ -155,7 +155,7 @@ public:
 	 * @return
 	 *	true if the group was activated; or, false, if the group was not activated because it was already activated.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual bool ActivatePassiveGameplayEffects(const FName WeightGroup) = 0;
 
 	/**
@@ -168,7 +168,7 @@ public:
 	 *	true if the group was deactivated; or, false, if the group was not deactivated because it was already
 	 *	deactivated.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual bool DeactivatePassiveGameplayEffects(const FName WeightGroup) = 0;
 
 	/**
@@ -182,7 +182,7 @@ public:
 	 * @param Tag
 	 *	The tag to apply to this Ability System Component.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void AddDynamicTag(const FGameplayTag Tag) = 0;
 
 	/**
@@ -196,7 +196,7 @@ public:
 	 * @param Tags
 	 *	The tag to apply to this Ability System Component.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void AppendDynamicTags(const FGameplayTagContainer Tags) = 0;
 
 	/**
@@ -209,7 +209,7 @@ public:
 	 * @param Tags
 	 *	The new collection of all the tags that should be applied on this Ability System Component.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void SetDynamicTags(const FGameplayTagContainer Tags) = 0;
 
 	/**
@@ -223,7 +223,7 @@ public:
 	 * @param Tag
 	 *	The tag to remove from this Ability System Component.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void RemoveDynamicTag(const FGameplayTag Tag) = 0;
 
 	/**
@@ -237,7 +237,7 @@ public:
 	 * @param Tags
 	 *	The tags to remove from this Ability System Component.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void RemoveDynamicTags(const FGameplayTagContainer Tags) = 0;
 
 	/**
@@ -245,7 +245,7 @@ public:
 	 *
 	 * If passive GEs are currently active on this ASC, they will be re-applied when this method is called.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual void RemoveAllDynamicTags() = 0;
 
 	/**
@@ -254,6 +254,6 @@ public:
 	 * @return
 	 *	A container wrapping the active tags.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Ability System Components")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Components|Ability System")
 	virtual FGameplayTagContainer GetActiveGameplayTags() const = 0;
 };

@@ -15,13 +15,20 @@
 #include <AbilitySystemInterface.h>
 #include <UObject/ScriptInterface.h>
 
-#include "PF2PlayerControllerInterface.h"
-#include "PF2QueuedActionHandle.h"
-
 #include "Abilities/PF2AbilityBoostBase.h"
 
 #include "PF2CharacterInterface.generated.h"
 
+// =====================================================================================================================
+// Forward Declarations (to break recursive dependencies)
+// =====================================================================================================================
+class IPF2CharacterCommandInterface;
+class IPF2CommandQueueInterface;
+class IPF2PlayerControllerInterface;
+
+// =====================================================================================================================
+// Normal Declarations
+// =====================================================================================================================
 UINTERFACE(MinimalAPI, BlueprintType, meta=(CannotImplementInterfaceInBlueprint))
 class UPF2CharacterInterface : public UAbilitySystemInterface
 {
@@ -94,7 +101,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category="OpenPF2|Characters")
 	virtual void GetCharacterAbilitySystemComponent(
-		TScriptInterface<IPF2CharacterAbilitySystemComponentInterface>& Output) const = 0;
+		TScriptInterface<IPF2CharacterAbilitySystemInterface>& Output) const = 0;
 
 	/**
 	 * Gets a PF2-specific version of the ASC sub-component of this character.
@@ -102,7 +109,16 @@ public:
 	 * @return
 	 *	The ASC, as an implementation of the interface for character ASCs.
 	 */
-	virtual IPF2CharacterAbilitySystemComponentInterface* GetCharacterAbilitySystemComponent() const = 0;
+	virtual IPF2CharacterAbilitySystemInterface* GetCharacterAbilitySystemComponent() const = 0;
+
+	/**
+	 * Gets the sub-component of this character that is used to track commands queued during encounters.
+	 *
+	 * @return
+	 *	The command queue component.
+	 */
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Characters")
+	virtual TScriptInterface<IPF2CommandQueueInterface> GetCommandQueueComponent() const = 0;
 
 	/**
 	 * Gets the player controller for this character, if this character is being controlled by a player.
@@ -131,6 +147,12 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category="OpenPF2|Characters")
 	virtual AActor* ToActor() = 0;
+
+	/**
+	 * Determines if this character is living (i.e., has hit points > 0).
+	 */
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Characters")
+	virtual bool IsAlive() = 0;
 
 	/**
 	 * Applies a single ability boost selection to this character.
@@ -253,26 +275,4 @@ public:
 	 */
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void MulticastHandleEncounterTurnEnded() = 0;
-
-	/**
-	 * Notifies this character that an action/ability they have attempted to execute has been queued-up.
-	 *
-	 * (This should normally be invoked only by the MoPRS).
-	 *
-	 * @param ActionHandle
-	 *	A reference to the ability that has been queued up.
-	 */
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleActionQueued(const FPF2QueuedActionHandle ActionHandle) = 0;
-
-	/**
-	 * Notifies this character that a previously queued action/ability has been removed from the queue.
-	 *
-	 * (This should normally be invoked only by the MoPRS).
-	 *
-	 * @param ActionHandle
-	 *	A reference to the ability that has been removed.
-	 */
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleActionDequeued(const FPF2QueuedActionHandle ActionHandle) = 0;
 };

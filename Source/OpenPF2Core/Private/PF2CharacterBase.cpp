@@ -10,10 +10,13 @@
 #include <UObject/ConstructorHelpers.h>
 
 #include "Abilities/PF2GameplayAbilityTargetData_BoostAbility.h"
+#include "Commands/PF2CommandQueueComponent.h"
 #include "Utilities/PF2InterfaceUtilities.h"
 
 APF2CharacterBase::APF2CharacterBase() :
-	APF2CharacterBase(TPF2CharacterComponentFactory<UPF2AbilitySystemComponent, UPF2AttributeSet>())
+	APF2CharacterBase(TPF2CharacterComponentFactory<UPF2AbilitySystemComponent,
+	                                                UPF2AttributeSet,
+	                                                UPF2CommandQueueComponent>())
 {
 }
 
@@ -78,7 +81,7 @@ int32 APF2CharacterBase::GetCharacterLevel() const
 }
 
 FORCEINLINE void APF2CharacterBase::GetCharacterAbilitySystemComponent(
-	TScriptInterface<IPF2CharacterAbilitySystemComponentInterface>& Output) const
+	TScriptInterface<IPF2CharacterAbilitySystemInterface>& Output) const
 {
 	// BUGBUG: This is weird, but the way that a TScriptInterface object works is it maintains a reference to a UObject
 	// that *implements* an interface along with a pointer to the part of the UObject that provides the interface
@@ -86,15 +89,20 @@ FORCEINLINE void APF2CharacterBase::GetCharacterAbilitySystemComponent(
 	Output = this->AbilitySystemComponent;
 }
 
-FORCEINLINE IPF2CharacterAbilitySystemComponentInterface* APF2CharacterBase::GetCharacterAbilitySystemComponent() const
+FORCEINLINE IPF2CharacterAbilitySystemInterface* APF2CharacterBase::GetCharacterAbilitySystemComponent() const
 {
 	// Too bad that ASCs in UE don't implement an interface; otherwise we could extend it so casts like this aren't
 	// needed.
-	IPF2CharacterAbilitySystemComponentInterface* CharacterAsc =
-		Cast<IPF2CharacterAbilitySystemComponentInterface>(this->AbilitySystemComponent);
+	IPF2CharacterAbilitySystemInterface* CharacterAsc =
+		Cast<IPF2CharacterAbilitySystemInterface>(this->AbilitySystemComponent);
 
 	check(CharacterAsc);
 	return CharacterAsc;
+}
+
+TScriptInterface<IPF2CommandQueueInterface> APF2CharacterBase::GetCommandQueueComponent() const
+{
+	return this->CommandQueue;
 }
 
 TScriptInterface<IPF2PlayerControllerInterface> APF2CharacterBase::GetPlayerController() const
@@ -110,6 +118,11 @@ TArray<UPF2AbilityBoostBase *> APF2CharacterBase::GetPendingAbilityBoosts() cons
 AActor* APF2CharacterBase::ToActor()
 {
 	return this;
+}
+
+bool APF2CharacterBase::IsAlive()
+{
+	return (this->AttributeSet->GetHitPoints() > 0);
 }
 
 void APF2CharacterBase::AddAbilityBoostSelection(
@@ -151,7 +164,7 @@ void APF2CharacterBase::ApplyAbilityBoostSelections()
 
 void APF2CharacterBase::ActivatePassiveGameplayEffects()
 {
-	IPF2CharacterAbilitySystemComponentInterface* CharacterAsc = this->GetCharacterAbilitySystemComponent();
+	IPF2CharacterAbilitySystemInterface* CharacterAsc = this->GetCharacterAbilitySystemComponent();
 
 	if (this->IsAuthorityForEffects() && !CharacterAsc->ArePassiveGameplayEffectsActive())
 	{
@@ -200,7 +213,7 @@ void APF2CharacterBase::HandleDamageReceived(const float                  Damage
 void APF2CharacterBase::HandleHitPointsChanged(const float Delta, const FGameplayTagContainer* EventTags)
 {
 	if ((this->AbilitySystemComponent == nullptr) ||
-		!this->AbilitySystemComponent->ArePassiveGameplayEffectsActive())
+		!this->GetCharacterAbilitySystemComponent()->ArePassiveGameplayEffectsActive())
 	{
 		// Stats are not presently initialized, so bail out to avoid firing off during initialization.
 		return;
@@ -217,16 +230,6 @@ void APF2CharacterBase::MulticastHandleEncounterTurnStarted_Implementation()
 void APF2CharacterBase::MulticastHandleEncounterTurnEnded_Implementation()
 {
 	this->OnEncounterTurnEnded();
-}
-
-void APF2CharacterBase::MulticastHandleActionQueued_Implementation(const FPF2QueuedActionHandle ActionHandle)
-{
-	this->OnActionQueued(ActionHandle);
-}
-
-void APF2CharacterBase::MulticastHandleActionDequeued_Implementation(const FPF2QueuedActionHandle ActionHandle)
-{
-	this->OnActionDequeued(ActionHandle);
 }
 
 bool APF2CharacterBase::SetCharacterLevel(const int32 NewLevel)
@@ -257,7 +260,7 @@ void APF2CharacterBase::RemoveRedundantPendingAbilityBoosts()
 		{
 			TSubclassOf<UPF2AbilityBoostBase> BoostGa   = AbilityBoostSelection.BoostGameplayAbility;
 			UAbilitySystemComponent*          Asc       = this->GetAbilitySystemComponent();
-			FGameplayAbilitySpec*             BoostSpec = Asc->FindAbilitySpecFromClass(BoostGa);
+			const FGameplayAbilitySpec*       BoostSpec = Asc->FindAbilitySpecFromClass(BoostGa);
 
 			if (BoostSpec != nullptr)
 			{

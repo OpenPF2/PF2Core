@@ -9,10 +9,18 @@
 #include <UObject/WeakInterfacePtr.h>
 
 #include "PF2PlayerControllerInterface.h"
-#include "PF2QueuedActionHandle.h"
 
 #include "PF2PlayerControllerBase.generated.h"
 
+// =====================================================================================================================
+// Forward Declarations (to break recursive dependencies)
+// =====================================================================================================================
+class IPF2CharacterInterface;
+class IPF2CharacterCommandInterface;
+
+// =====================================================================================================================
+// Normal Declarations
+// =====================================================================================================================
 /**
  * Default base class for PF2 Player Controllers.
  *
@@ -56,15 +64,6 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	virtual void MulticastHandleEncounterTurnEnded() override;
 
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleActionQueued(const FPF2QueuedActionHandle ActionHandle) override;
-
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void MulticastHandleActionDequeued(const FPF2QueuedActionHandle ActionHandle) override;
-
-	UFUNCTION(BlueprintCallable, Server, Unreliable, DisplayName="Cancel Queued Action")
-	virtual void ServerCancelQueuedAction(const FPF2QueuedActionHandle ActionHandle) override;
-
 protected:
 	// =================================================================================================================
 	// Blueprint Event Callbacks
@@ -95,29 +94,4 @@ protected:
 	 */
 	UFUNCTION(BlueprintImplementableEvent, Category="OpenPF2|Player Controllers")
 	void OnEncounterTurnEnded();
-
-	/**
-	 * BP event invoked when an action/ability has been queued-up for the controlled character.
-	 *
-	 * This is invoked on both the owning client and server.
-	 *
-	 * @param ActionHandle
-	 *	A reference to the ability that has been queued-up.
-	 */
-	UFUNCTION(BlueprintImplementableEvent, Category="OpenPF2|Player Controllers")
-	void OnActionQueued(const FPF2QueuedActionHandle ActionHandle);
-
-	/**
-	 * BP event invoked when a previously queued action/ability for the controlled character has been cancelled.
-	 *
-	 * This is invoked on both the owning client and server.
-	 *
-	 * This happens if an action queued through the active Mode of Play Rule Set (MoPRS) was canceled by the player,
-	 * by game rules, or something in the world.
-	 *
-	 * @param ActionHandle
-	 *	A reference to the ability that has been canceled.
-	 */
-	UFUNCTION(BlueprintImplementableEvent, Category="OpenPF2|Player Controllers")
-	void OnActionDequeued(const FPF2QueuedActionHandle ActionHandle);
 };

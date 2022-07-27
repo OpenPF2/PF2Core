@@ -88,24 +88,3 @@ void APF2PlayerControllerBase::MulticastHandleEncounterTurnEnded_Implementation(
 {
 	this->OnEncounterTurnEnded();
 }
-
-void APF2PlayerControllerBase::MulticastHandleActionQueued_Implementation(const FPF2QueuedActionHandle ActionHandle)
-{
-	this->OnActionQueued(ActionHandle);
-}
-
-void APF2PlayerControllerBase::MulticastHandleActionDequeued_Implementation(const FPF2QueuedActionHandle ActionHandle)
-{
-	this->OnActionDequeued(ActionHandle);
-}
-
-void APF2PlayerControllerBase::ServerCancelQueuedAction_Implementation(const FPF2QueuedActionHandle ActionHandle)
-{
-	const UWorld*          World    = this->GetWorld();
-	IPF2GameModeInterface* GameMode = Cast<IPF2GameModeInterface>(World->GetAuthGameMode());
-
-	if (GameMode != nullptr)
-	{
-		GameMode->CancelActionQueuedForInitiativeTurnByHandle(ActionHandle);
-	}
-}

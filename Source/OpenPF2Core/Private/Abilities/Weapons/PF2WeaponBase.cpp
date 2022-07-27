@@ -12,7 +12,7 @@
 
 #include "Abilities/Weapons/PF2WeaponBase.h"
 
-#include "Abilities/PF2CharacterAbilitySystemComponentInterface.h"
+#include "Abilities/PF2CharacterAbilitySystemInterface.h"
 #include "Calculations/PF2TemlCalculation.h"
 #include "Libraries/PF2DiceLibrary.h"
 
@@ -24,7 +24,7 @@ void UPF2WeaponBase::ActivateAbility(
 {
 	if (CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
-		const IPF2CharacterAbilitySystemComponentInterface* CharacterAsc =
+		const IPF2CharacterAbilitySystemInterface* CharacterAsc =
 			PF2GameplayAbilityUtilities::GetCharacterAbilitySystemComponent(ActorInfo);
 
 		// TODO: Implement
@@ -33,8 +33,8 @@ void UPF2WeaponBase::ActivateAbility(
 	}
 }
 
-float UPF2WeaponBase::GetAbilityModifierValue(const IPF2CharacterAbilitySystemComponentInterface* CharacterAsc,
-                                              const EPF2CharacterAbilityScoreType                 AbilityScoreType)
+float UPF2WeaponBase::GetAbilityModifierValue(const IPF2CharacterAbilitySystemInterface* CharacterAsc,
+                                              const EPF2CharacterAbilityScoreType        AbilityScoreType)
 {
 	const TMap<EPF2CharacterAbilityScoreType, FPF2AttributeModifierSnapshot> AbilityScoreValues =
 		CharacterAsc->GetAbilityScoreValues();
@@ -42,7 +42,7 @@ float UPF2WeaponBase::GetAbilityModifierValue(const IPF2CharacterAbilitySystemCo
 	return AbilityScoreValues[AbilityScoreType].ModifierValue;
 }
 
-float UPF2WeaponBase::CalculateAttackRoll(const IPF2CharacterAbilitySystemComponentInterface* CharacterAsc)
+float UPF2WeaponBase::CalculateAttackRoll(const IPF2CharacterAbilitySystemInterface* CharacterAsc)
 {
 	const int32                 CharacterLevel = CharacterAsc->GetCharacterLevel();
 	const FGameplayTagContainer CharacterTags  = CharacterAsc->GetActiveGameplayTags();
@@ -69,7 +69,7 @@ float UPF2WeaponBase::CalculateAttackRoll(const IPF2CharacterAbilitySystemCompon
 	return RollResult + AttackAbilityModifier + WeaponProficiencyBonus;
 }
 
-float UPF2WeaponBase::CalculateDamageRoll(const IPF2CharacterAbilitySystemComponentInterface* CharacterAsc)
+float UPF2WeaponBase::CalculateDamageRoll(const IPF2CharacterAbilitySystemInterface* CharacterAsc)
 {
 	const int32 RollResult            = UPF2DiceLibrary::RollStringSum(this->DamageDie);
 	const float DamageAbilityModifier = GetAbilityModifierValue(CharacterAsc, this->DamageAbilityModifierType);

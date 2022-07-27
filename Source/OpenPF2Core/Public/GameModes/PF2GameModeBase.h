@@ -8,8 +8,6 @@
 #include <GameFramework/GameModeBase.h>
 #include <UObject/ScriptInterface.h>
 
-#include "Abilities/PF2ActionQueueResult.h"
-
 #include "GameModes/PF2ModeOfPlayRuleSetBase.h"
 #include "GameModes/PF2GameModeInterface.h"
 
@@ -17,6 +15,8 @@
 
 /**
  * Default base class for PF2 Game Modes.
+ *
+ * A single instance of this class exists only on the SERVER, as is the case with a game mode in any UE-powered game.
  *
  * @see IPF2GameModeInterface
  */
@@ -34,17 +34,9 @@ protected:
 	 * Map from Modes of Play to the Rule Set to use for each mode.
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Mode of Play Rules")
-	TMap<EPF2ModeOfPlayType, TSubclassOf<UPF2ModeOfPlayRuleSetBase>> ModeRuleSets;
+	TMap<EPF2ModeOfPlayType, TSubclassOf<APF2ModeOfPlayRuleSetBase>> ModeRuleSets;
 
 public:
-	// =================================================================================================================
-	// Public Constructors
-	// =================================================================================================================
-	/**
-	 * Default constructor for APF2GameModeBase.
-	 */
-	explicit APF2GameModeBase();
-
 	// =================================================================================================================
 	// Public Methods - IPF2GameModeInterface Implementation
 	// =================================================================================================================
@@ -67,25 +59,15 @@ public:
 	virtual void RemoveCharacterFromEncounter(const TScriptInterface<IPF2CharacterInterface>& Character) override;
 
 	UFUNCTION(BlueprintCallable)
-	virtual FPF2QueuedActionHandle QueueActionForInitiativeTurn(
-		TScriptInterface<IPF2CharacterInterface>&    Character,
-		TScriptInterface<IPF2QueuedActionInterface>& Action,
-		EPF2ActionQueueResult&                       OutQueueResult) override;
-
-	UFUNCTION(BlueprintCallable)
-	virtual void CancelActionQueuedForInitiativeTurnByHandle(const FPF2QueuedActionHandle ActionHandle) override;
-
-	UFUNCTION(BlueprintCallable)
-	virtual void CancelActionQueuedForInitiativeTurn(
-		const TScriptInterface<IPF2CharacterInterface>&    Character,
-		const TScriptInterface<IPF2QueuedActionInterface>& Action) override;
+	virtual EPF2CommandExecuteOrQueueResult AttemptToExecuteOrQueueCommand(
+		TScriptInterface<IPF2CharacterInterface>&        Character,
+		TScriptInterface<IPF2CharacterCommandInterface>& Command) override;
 
 protected:
 	// =================================================================================================================
 	// Protected Methods - AActor Overrides
 	// =================================================================================================================
 	virtual void BeginPlay() override;
-	virtual void Tick(const float DeltaSeconds) override;
 
 	// =================================================================================================================
 	// Protected Methods - AGameModeBase Overrides

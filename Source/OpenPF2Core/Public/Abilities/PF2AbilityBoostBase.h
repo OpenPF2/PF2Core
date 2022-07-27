@@ -57,7 +57,7 @@ protected:
 public:
 	UPF2AbilityBoostBase();
 
-	static FORCEINLINE FGameplayTag GetTriggerTag()
+	FORCEINLINE static FGameplayTag GetTriggerTag()
 	{
 		return PF2GameplayAbilityUtilities::GetTag(FName("GameplayAbility.Type.AbilityBoost"));
 	};

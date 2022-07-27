@@ -5,34 +5,21 @@
 
 #include "GameModes/PF2ModeOfPlayRuleSetBase.h"
 
-#include "PF2QueuedActionInterface.h"
+#include "Libraries/PF2CharacterLibrary.h"
 
-#include "Abilities/PF2ActionQueueResult.h"
-
-#include "Utilities/PF2ArrayUtilities.h"
-#include "Utilities/PF2InterfaceUtilities.h"
-
-FPF2QueuedActionHandle UPF2ModeOfPlayRuleSetBase::OnQueueAction_Implementation(
-	const TScriptInterface<IPF2CharacterInterface>&    Character,
-	const TScriptInterface<IPF2QueuedActionInterface>& Action,
-	OUT EPF2ActionQueueResult&                         OutQueueResult)
+EPF2CommandExecuteOrQueueResult APF2ModeOfPlayRuleSetBase::AttemptToExecuteOrQueueCommand_Implementation(
+	const TScriptInterface<IPF2CharacterInterface>&        Character,
+	const TScriptInterface<IPF2CharacterCommandInterface>& Command)
 {
-	// By default there is no queue, so we perform the action immediately.
-	Action->PerformAction();
+	EPF2CommandExecuteOrQueueResult Result;
 
-	OutQueueResult = EPF2ActionQueueResult::ExecutedImmediately;
+	// By default there is no queue, so we perform the command immediately.
+	Result = IPF2CharacterCommandInterface::ImmediateResultToExecuteOrQueueResult(Command->AttemptExecuteImmediately());
 
-	return FPF2QueuedActionHandle();
+	return Result;
 }
 
-void UPF2ModeOfPlayRuleSetBase::OnCancelQueuedAction_Implementation(
-	const TScriptInterface<IPF2CharacterInterface>&    Character,
-	const TScriptInterface<IPF2QueuedActionInterface>& Action)
-{
-	// By default there is no queue, so we do nothing.
-}
-
-TScriptInterface<IPF2GameModeInterface> UPF2ModeOfPlayRuleSetBase::GetGameMode() const
+TScriptInterface<IPF2GameModeInterface> APF2ModeOfPlayRuleSetBase::GetGameMode() const
 {
 	AGameModeBase* GameMode = this->GetWorld()->GetAuthGameMode();
 
@@ -41,38 +28,12 @@ TScriptInterface<IPF2GameModeInterface> UPF2ModeOfPlayRuleSetBase::GetGameMode()
 	return TScriptInterface<IPF2GameModeInterface>(GameMode);
 }
 
-TArray<TScriptInterface<IPF2PlayerControllerInterface>> UPF2ModeOfPlayRuleSetBase::GetPlayerControllers() const
+TArray<TScriptInterface<IPF2PlayerControllerInterface>> APF2ModeOfPlayRuleSetBase::GetPlayerControllers() const
 {
-	TArray<TScriptInterface<IPF2PlayerControllerInterface>> PlayerControllers;
-	const UWorld* const                                     World = this->GetWorld();
-
-	for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
-	{
-		APlayerController* PlayerController = Iterator->Get();
-
-		IPF2PlayerControllerInterface* const Pf2PlayerController =
-			Cast<IPF2PlayerControllerInterface>(PlayerController);
-
-		if (Pf2PlayerController != nullptr)
-		{
-			PlayerControllers.Add(PF2InterfaceUtilities::ToScriptInterface(Pf2PlayerController));
-		}
-	}
-
-	return PlayerControllers;
+	return UPF2CharacterLibrary::GetPlayerControllers(this->GetWorld());
 }
 
-TArray<TScriptInterface<IPF2CharacterInterface>> UPF2ModeOfPlayRuleSetBase::GetPlayerControlledCharacters() const
+TArray<TScriptInterface<IPF2CharacterInterface>> APF2ModeOfPlayRuleSetBase::GetPlayerControlledCharacters() const
 {
-	return PF2ArrayUtilities::Reduce<TArray<TScriptInterface<IPF2CharacterInterface>>>(
-		this->GetPlayerControllers(),
-		TArray<TScriptInterface<IPF2CharacterInterface>>(),
-		[](TArray<TScriptInterface<IPF2CharacterInterface>>      Characters,
-		   const TScriptInterface<IPF2PlayerControllerInterface> PlayerController)
-		{
-			Characters.Append(PlayerController->GetControlledCharacters());
-
-			return Characters;
-		}
-	);
+	return UPF2CharacterLibrary::GetPlayerControlledCharacters(this->GetWorld());
 }

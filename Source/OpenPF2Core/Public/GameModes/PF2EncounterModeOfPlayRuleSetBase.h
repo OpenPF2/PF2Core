@@ -7,140 +7,85 @@
 
 #include <UObject/ScriptInterface.h>
 
-#include "PF2CharacterInterface.h"
+#include "PF2CharacterInitiativeQueueInterface.h"
 #include "PF2ModeOfPlayRuleSetBase.h"
-#include "PF2QueuedActionInterface.h"
+
+#include "Commands/PF2CommandExecuteImmediatelyResult.h"
+
+#include "Utilities/PF2InterfaceUtilities.h"
 
 #include "PF2EncounterModeOfPlayRuleSetBase.generated.h"
 
+// =====================================================================================================================
+// Forward Declarations (to minimize header dependencies)
+// =====================================================================================================================
+class IPF2CharacterCommandInterface;
+class IPF2CharacterInterface;
+
+// =====================================================================================================================
+// Normal Declarations
+// =====================================================================================================================
 /**
- * Base class for PF2 Mode of Play Rule Sets (MoPRS) that need encounter logic, including initiative and queued actions.
+ * Base class for PF2 Mode of Play Rule Sets (MoPRS) that need encounter logic, including initiative and command queues.
  *
  * Encounters often involve each character "rolling" for their initiative order, and then performing attacks in order
  * from highest to lowest initiative score. This class provides several convenience methods for Blueprint sub-classes to
  * set initiatives for characters and then iterate through characters in order of their initiative.
  *
  * Since OpenPF2 is intended to support action RPGs just as well as turn-based RPGs, this base class also provides
- * convenience methods to support the ability for characters to "queue-up" abilities/actions that they want to perform
+ * convenience methods to support the ability for characters to "queue-up" abilities/commands that they want to perform
  * when it is their turn. This gives Blueprint sub-classes full control over how they want to implement combat, either
  * allowing each character to act one-by-one; or, cycling through characters at a rapid clip to keep combat flowing
  * despite the turn-based nature of PF2 rules.
  */
 UCLASS(Abstract, Blueprintable)
 // ReSharper disable once CppClassCanBeFinal
-class OPENPF2CORE_API UPF2EncounterModeOfPlayRuleSetBase : public UPF2ModeOfPlayRuleSetBase
+class OPENPF2CORE_API APF2EncounterModeOfPlayRuleSetBase : public APF2ModeOfPlayRuleSetBase
 {
 	GENERATED_BODY()
 
 protected:
-	// =================================================================================================================
-	// Internal Classes
-	// =================================================================================================================
 	/**
-	 * Internal structure used for associating a queued action handle with the character and action for it.
+	 * The component of the MoPRS that maintains the list of characters and their initiatives.
 	 */
-	struct FPF2QueuedActionHandleDetails
-	{
-		/**
-		 * The handle itself.
-		 */
-		const FPF2QueuedActionHandle Handle;
-
-		/**
-		 * The character for which the action was queued.
-		 */
-		const TWeakInterfacePtr<IPF2CharacterInterface> Character;
-
-		/**
-		 * The action that was queued.
-		 */
-		const TWeakInterfacePtr<IPF2QueuedActionInterface> Action;
-
-		/**
-		 * Constructor for FPF2QueuedActionHandleDetails.
-		 */
-		FPF2QueuedActionHandleDetails(const FPF2QueuedActionHandle     Handle,
-		                              const IPF2CharacterInterface*    Character,
-		                              const IPF2QueuedActionInterface* Action) :
-			Handle(Handle),
-			Character(const_cast<IPF2CharacterInterface*>(Character)),
-			Action(const_cast<IPF2QueuedActionInterface*>(Action))
-		{
-		}
-	};
-
-	// =================================================================================================================
-	// Protected Fields
-	// =================================================================================================================
-	/**
-	 * The queue of actions for each character in the encounter.
-	 */
-	TMultiMap<IPF2CharacterInterface*, IPF2QueuedActionInterface *> CharacterQueues;
-
-	/**
-	 * A map of initiative to characters.
-	 *
-	 * From the Pathfinder 2E Core Rulebook, page 13, "Initiative":
-	 * "At the start of an encounter, all creatures involved roll for initiative to determine the order in which they
-	 * act. The higher the result of its roll, the earlier a creature gets to act."
-	 *
-	 * From the Pathfinder 2E Core Rulebook, page 468, "Step 1: Roll Initiative":
-	 * "If your result is tied with a foe’s result, the adversary goes first. If your result is tied with another PC’s,
-	 * you can decide between yourselves who goes first when you reach that place in the initiative order. After that,
-	 * your places in the initiative order usually don’t change during the encounter."
-	 */
-	TMultiMap<int, IPF2CharacterInterface*> CharactersByInitiatives;
-
-	/**
-	 * All of the characters in the initiative, ordered from highest to lowest initiative.
-	 *
-	 * This array is rebuilt whenever characters are added or removed from the encounter.
-	 */
-	TArray<IPF2CharacterInterface*> CurrentCharacterSequence;
-
-	/**
-	 * The last character that was returned by GetNextCharacterByInitiative().
-	 */
-	IPF2CharacterInterface* PreviousCharacter;
-
-	/**
-	 * The initiative of the last character that was returned by GetNextCharacterByInitiative().
-	 */
-	int32 PreviousCharacterIndex;
-
-	/**
-	 * A look-up from handle IDs to information about issued handles.
-	 */
-	TMap<int32, FPF2QueuedActionHandleDetails> IssuedActionHandles;
-
-	/**
-	 * A look-up from queued actions to the handles that reference them.
-	 */
-	TMap<const IPF2QueuedActionInterface*, const FPF2QueuedActionHandle> ActionHandles;
-
-	/**
-	 * The next ID to assign to an action handle.
-	 */
-	int32 NextActionHandleId;
+	IPF2CharacterInitiativeQueueInterface* CharacterInitiativeQueue;
 
 public:
 	// =================================================================================================================
 	// Public Constructors
 	// =================================================================================================================
 	/**
-	 * Default constructor for UPF2EncounterModeOfPlayRuleSetBase.
+	 * Default constructor for APF2EncounterModeOfPlayRuleSetBase.
 	 */
-	explicit UPF2EncounterModeOfPlayRuleSetBase() :
-		PreviousCharacter(nullptr),
-		PreviousCharacterIndex(-1),
-		NextActionHandleId(0)
+	explicit APF2EncounterModeOfPlayRuleSetBase();
+
+	// =================================================================================================================
+	// Public Methods
+	// =================================================================================================================
+	/**
+	 * Gets the component of the MoPRS that maintains the list of characters and their initiatives.
+	 *
+	 * @return
+	 *	The character initiative queue.
+	 */
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Initiative")
+	FORCEINLINE TScriptInterface<IPF2CharacterInitiativeQueueInterface> GetCharacterInitiativeQueue() const
 	{
+		return PF2InterfaceUtilities::ToScriptInterface<IPF2CharacterInitiativeQueueInterface>(
+			this->CharacterInitiativeQueue
+		);
 	}
 
-protected:
-	// =================================================================================================================
-	// Protected Methods
-	// =================================================================================================================
+	/**
+	 * Gets whether there are payable characters with initiative set in this encounter.
+	 *
+	 * @return
+	 *	- true if there is at least one playable character who is not dead and who has initiative set.
+	 *	- false if there are no playable, living characters with initiative set.
+	 */
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Characters")
+	bool HavePlayableCharacters() const;
+
 	/**
 	 * Signals the start of the specified character's turn.
 	 *
@@ -148,7 +93,7 @@ protected:
 	 *	The character for whom a turn is starting.
 	 */
 	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Turns")
-	void StartTurnForCharacter(const TScriptInterface<IPF2CharacterInterface> Character);
+	void StartTurnForCharacter(const TScriptInterface<IPF2CharacterInterface> Character) const;
 
 	/**
 	 * Signals the end of the specified character's turn.
@@ -253,140 +198,84 @@ protected:
 	TArray<TScriptInterface<IPF2CharacterInterface>> GetCharactersInInitiativeOrder() const;
 
 	/**
-	 * Adds the specified action to the queue of actions being maintained for the specified PF2 character.
+	 * Adds the specified command to the queue of commands being maintained for the specified PF2 character.
 	 *
 	 * @param Character
-	 *	The character that is queuing the action up.
-	 * @param Action
-	 *	The action that is being queued.
+	 *	The character that is queuing the command up.
+	 * @param Command
+	 *	The command that is being queued.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	FPF2QueuedActionHandle QueueActionForCharacter(
-		const TScriptInterface<IPF2CharacterInterface>&    Character,
-		const TScriptInterface<IPF2QueuedActionInterface>& Action);
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Command Queue")
+	void QueueCommandForCharacter(
+		const TScriptInterface<IPF2CharacterInterface>&        Character,
+		const TScriptInterface<IPF2CharacterCommandInterface>& Command) const;
 
 	/**
-	 * Removes the specified action from the queue of actions being maintained for the specified PF2 character.
-	 *
-	 * @param ActionHandle
-	 *	A reference to the previously-queued action that is being canceled.
-	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	void RemoveQueuedActionForCharacterByHandle(const FPF2QueuedActionHandle ActionHandle);
-
-	/**
-	 * Removes the specified action from the queue of actions being maintained for the specified PF2 character.
-	 *
-	 * @param Character
-	 *	The character that queued-up the action.
-	 * @param Action
-	 *	The previously-queued action that is being canceled.
-	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	void RemoveQueuedActionForCharacter(
-		const TScriptInterface<IPF2CharacterInterface>&    Character,
-		const TScriptInterface<IPF2QueuedActionInterface>& Action);
-
-	/**
-	 * Cancels and clears all actions queued for all characters.
+	 * Cancels and clears all commands queued for all characters.
 	 *
 	 * This is typically fired right before a transition out of an encounter.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	void CancelQueuedActionsForAllCharacters();
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Command Queue")
+	void CancelQueuedCommandsForAllCharacters();
 
 	/**
-	 * Performs the next action in the specified character's queue of actions (if there is one).
+	 * Performs the next command in the specified character's queue of commands (if there is one).
 	 *
-	 * The action is automatically removed from the character's queue of actions.
+	 * The command is automatically removed from the character's queue of commands.
 	 *
 	 * @param Character
 	 *	The character whose turn it is to act.
 	 *
 	 * @return
-	 *	- EPF2AbilityActivationResult::None if the character is out of actions to execute.
-	 *	- EPF2AbilityActivationResult::Activated if the character had an action queued up that was executed.
-	 *	- EPF2AbilityActivationResult::Blocked if the character has an action to execute but it cannot be executed yet,
-	 *	  typically because it is blocked by another ability that is active on the character.
+	 *	- EPF2ImmediateCommandExecutionResult::None if the character is out of commands to execute.
+	 *	- EPF2ImmediateCommandExecutionResult::Activated if the character had an command queued up that was executed.
+	 *	- EPF2ImmediateCommandExecutionResult::Blocked if the character has an command to execute but it cannot be
+	 *	  executed yet, typically because it is blocked by another ability that is active on the character.
+	 *	- EPF2ImmediateCommandExecutionResult::Cancelled if the rule set has opted to cancel the command.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Command Queue")
 	UPARAM(DisplayName = "Activation Result")
-	EPF2AbilityActivationResult ExecuteNextQueuedActionForCharacter(
+	EPF2CommandExecuteImmediatelyResult ExecuteNextQueuedCommandForCharacter(
 		const TScriptInterface<IPF2CharacterInterface>& Character);
 
 	/**
-	 * Returns whether there is another action queued for the specified character.
+	 * Returns whether there is another command queued for the specified character.
 	 *
 	 * @param Character
-	 *	The character for which actions will be inspected.
+	 *	The character for which commands will be inspected.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	bool DoesCharacterHaveNextActionQueued(const TScriptInterface<IPF2CharacterInterface>& Character) const;
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Command Queue")
+	bool DoesCharacterHaveNextCommandQueued(const TScriptInterface<IPF2CharacterInterface>& Character) const;
 
 	/**
-	 * Returns the next action in the specified character's queue of actions (if there is one).
+	 * Returns the next command in the specified character's queue of commands (if there is one).
 	 *
-	 * The action is not removed from the queue.
+	 * The command is not removed from the queue.
 	 *
 	 * @param Character
-	 *	The character for which an action is desired.
-	 * @param NextAction
-	 *	The output -- either the next action for the specified character; or an invalid reference if the character does
-	 *	not have any more queued actions.
+	 *	The character for which an command is desired.
+	 * @param NextCommand
+	 *	The output -- either the next command for the specified character; or an invalid reference if the character does
+	 *	not have any more queued commands.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	void PeekNextQueuedActionForCharacter(
-		const TScriptInterface<IPF2CharacterInterface>& Character,
-		TScriptInterface<IPF2QueuedActionInterface>&    NextAction) const;
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Command Queue")
+	void PeekNextQueuedCommandForCharacter(
+		const TScriptInterface<IPF2CharacterInterface>&  Character,
+		TScriptInterface<IPF2CharacterCommandInterface>& NextCommand) const;
 
 	/**
-	 * Removes and returns the next action in the specified character's queue of actions (if there is one).
+	 * Removes and returns the next command in the specified character's queue of commands (if there is one).
 	 *
-	 * The action is removed from the queue.
+	 * The command is removed from the queue.
 	 *
 	 * @param Character
-	 *	The character for which an action is desired.
-	 * @param NextAction
-	 *	The output -- either the next action for the specified character; or an invalid reference if the character does
-	 *	not have any more queued actions.
+	 *	The character for which an command is desired.
+	 * @param NextCommand
+	 *	The output -- either the next command for the specified character; or an invalid reference if the character does
+	 *	not have any more queued commands.
 	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Action Queue")
-	void PopNextActionQueuedForCharacter(
-		const TScriptInterface<IPF2CharacterInterface>& Character,
-		TScriptInterface<IPF2QueuedActionInterface>&    NextAction);
-
-	/**
-	 * Rebuilds the sequence of characters according to initiative order.
-	 *
-	 * All characters are sorted from highest to lowest initiative order in the rebuilt list. If two characters have the
-	 * same initiative, their order will be adjusted so that one goes before the other. Per PF2 rules (see below),
-	 * Playable Characters (PCs) with the same initiative as Non-Playable Characters (NPCs) are sorted after NPCs so
-	 * that NPCs take turns first. Unlike with standard PF2 rules, though, if multiple characters of the same type --
-	 * either two PCs or two NPCs -- we randomize their order rather than give each character a choice of preferred
-	 * order. This helps to keep combat fluid by avoiding having to prompt players for input at the start of encounters.
-	 *
-	 * From the Pathfinder 2E Core Rulebook, page 13, "Initiative":
-	 * "At the start of an encounter, all creatures involved roll for initiative to determine the order in which they
-	 * act. The higher the result of its roll, the earlier a creature gets to act."
-	 *
-	 * From the Pathfinder 2E Core Rulebook, page 468, "Step 1: Roll Initiative":
-	 * "If your result is tied with a foe’s result, the adversary goes first. If your result is tied with another PC’s,
-	 * you can decide between yourselves who goes first when you reach that place in the initiative order. After that,
-	 * your places in the initiative order usually don’t change during the encounter."
-	 *
-	 * This method performs a lot of sorting and is expensive. It should only be called when the list of characters has
-	 * changed.
-	 */
-	void RebuildCharacterSequence();
-
-	/**
-	 * Attempts to locate the specified character in the initiative map and then remove them.
-	 *
-	 * This method does not rebuild the character sequence. In most cases, you will want to use
-	 * ClearInitiativeForCharacter() instead, as that method calls this method and then rebuilds the character sequence.
-	 *
-	 * @param Character
-	 *	The character being removed from the map.
-	 */
-	void RemoveCharacterFromInitiativeMap(const IPF2CharacterInterface* Character);
+	UFUNCTION(BlueprintCallable, Category="OpenPF2|Mode of Play Rule Sets|Command Queue")
+	void PopNextCommandQueuedForCharacter(
+		const TScriptInterface<IPF2CharacterInterface>&  Character,
+		TScriptInterface<IPF2CharacterCommandInterface>& NextCommand);
 };

@@ -6,13 +6,13 @@
 #pragma once
 
 #include <AbilitySystemComponent.h>
-#include "PF2CharacterAbilitySystemComponentInterface.h"
+#include "PF2CharacterAbilitySystemInterface.h"
 
 #include "PF2AbilitySystemComponent.generated.h"
 
 UCLASS()
 class OPENPF2CORE_API UPF2AbilitySystemComponent :
-	public UAbilitySystemComponent, public IPF2CharacterAbilitySystemComponentInterface
+	public UAbilitySystemComponent, public IPF2CharacterAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -74,7 +74,7 @@ public:
 	UPF2AbilitySystemComponent();
 
 	// =================================================================================================================
-	// Public Methods - IPF2AbilitySystemComponentInterface Implementation
+	// Public Methods - IPF2AbilitySystemInterface Implementation
 	// =================================================================================================================
 	virtual bool ArePassiveGameplayEffectsActive() override
 	{
@@ -138,7 +138,7 @@ public:
 	virtual FGameplayTagContainer GetActiveGameplayTags() const override;
 
 	// =================================================================================================================
-	// Public Methods - IPF2CharacterAbilitySystemComponentInterface Implementation
+	// Public Methods - IPF2CharacterAbilitySystemInterface Implementation
 	// =================================================================================================================
 	UFUNCTION(BlueprintCallable)
 	virtual int32 GetCharacterLevel() const override;

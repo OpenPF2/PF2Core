@@ -10,7 +10,8 @@
 
 #include "PF2ModeOfPlayRuleSetInterface.h"
 
-#include "Abilities/PF2ActionQueueResult.h"
+#include "Commands/PF2CharacterCommandInterface.h"
+#include "Commands/PF2CommandExecuteOrQueueResult.h"
 
 #include "PF2GameModeInterface.generated.h"
 
@@ -22,6 +23,8 @@ class UPF2GameModeInterface : public UInterface
 
 /**
  * An interface for OpenPF2-compatible Player Modes.
+ *
+ * Instances of this interface exist only on the SERVER, as is the case with a game mode in any UE-powered game.
  */
 class OPENPF2CORE_API IPF2GameModeInterface
 {
@@ -96,68 +99,23 @@ public:
 	virtual void RemoveCharacterFromEncounter(const TScriptInterface<IPF2CharacterInterface>& Character) = 0;
 
 	/**
-	 * Notifies game rules and/or the Mode of Play Rule Set (MoPRS) that a character wishes to perform an action.
+	 * Notifies game rules and/or the Mode of Play Rule Set (MoPRS) that a character wishes to perform a command.
 	 *
-	 * If the current mode is structured (e.g., Encounter mode), then the action will be placed into a queue of actions
-	 * for the character -- preserving the order that the actions were queued -- and the action will be executed when it
-	 * is the character's turn (e.g., according to initiative order). On the other hand, if the current Mode of Play
-	 * allows characters to perform actions immediately, the action will not be queued and will instead be given the
-	 * opportunity to run before this call returns.
+	 * If the current mode is structured (e.g., Encounter mode), then the command will be placed into a queue of
+	 * commands for the character -- preserving the order that the commands were queued -- and the command will be
+	 * executed when it is the character's turn (e.g., according to initiative order). On the other hand, if the current
+	 * Mode of Play allows characters to perform commands immediately, the command will not be queued and will instead
+	 * be given the opportunity to run before this call returns.
 	 *
 	 * @param Character
-	 *	The character for which the action is being queued.
-	 * @param Action
-	 *	The action being queued.
-	 * @param OutQueueResult
-	 *	An optional output parameter to be notified of whether the action was actually queued, executed immediately,
-	 *	or refused.
+	 *	The character for which the command is being queued.
+	 * @param Command
+	 *	The command being queued.
 	 * @return
-	 *	If the action was queued: a handle to refer to the action on the server in the future.
+	 *	A result that indicates whether the command was queued, executed immediately, or refused.
 	 */
 	UFUNCTION(BlueprintCallable, Category="OpenPF2|Game Modes")
-	virtual FPF2QueuedActionHandle QueueActionForInitiativeTurn(
-		TScriptInterface<IPF2CharacterInterface>&    Character,
-		TScriptInterface<IPF2QueuedActionInterface>& Action,
-		EPF2ActionQueueResult&                       OutQueueResult) = 0;
-
-	/**
-	 * Notifies the game rules and/or the Mode of Play Rule Set (MoPRS) that a character no longer wishes to perform a
-	 * previously-queued action.
-	 *
-	 * This should be used if the action is being garbage collected/destroyed; or if the action has been canceled by
-	 * other means, such as via a HUD or UMG widget that a player has used to second-guess an action decision they have
-	 * previously made.
-	 *
-	 * If the specified action is not in the queue for the specified character, no changes are made to the action queue
-	 * and this method simply returns.
-	 *
-	 * This should only get called on the server.
-	 *
-	 * @param ActionHandle
-	 *	A reference to the action to remove from the queue.
-	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Game Modes")
-	virtual void CancelActionQueuedForInitiativeTurnByHandle(const FPF2QueuedActionHandle ActionHandle) = 0;
-
-	/**
-	 * Notifies the game rules and/or the Mode of Play Rule Set (MoPRS) that a character no longer wishes to perform a
-	 * previously-queued action.
-	 *
-	 * This should be used if the action is being garbage collected/destroyed; or if the action has been canceled by
-	 * other means, such as via a HUD or UMG widget that a player has used to second-guess an action decision they have
-	 * previously made.
-	 *
-	 * If the specified action is not in the queue for the specified character, no changes are made to the action queue
-	 * and this method simply returns.
-	 *
-	 * This should only get called on the server.
-	 *
-	 * @param Character
-	 *	The character for which the action was previously queued.
-	 * @param Action
-	 *	The action to remove from the queue.
-	 */
-	UFUNCTION(BlueprintCallable, Category="OpenPF2|Game Modes")
-	virtual void CancelActionQueuedForInitiativeTurn(const TScriptInterface<IPF2CharacterInterface>&    Character,
-	                                                 const TScriptInterface<IPF2QueuedActionInterface>& Action) = 0;
+	virtual EPF2CommandExecuteOrQueueResult AttemptToExecuteOrQueueCommand(
+		TScriptInterface<IPF2CharacterInterface>&        Character,
+		TScriptInterface<IPF2CharacterCommandInterface>& Command) = 0;
 };

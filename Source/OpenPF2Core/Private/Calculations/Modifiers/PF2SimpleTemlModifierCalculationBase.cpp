@@ -42,7 +42,7 @@ float UPF2SimpleTemlModifierCalculationBase::DoCalculation(
 	const float Modifier = AbilityScore + TemlProficiencyBonus;
 
 	UE_LOG(
-		LogPf2Core,
+		LogPf2CoreStats,
 		VeryVerbose,
 		TEXT("Calculated modifier ('%s'): %f + %f = %f"),
 		*(this->ProficiencyRootTag.ToString()),

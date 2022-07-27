@@ -547,7 +547,7 @@ void UPF2AttributeSet::HandleDamageIncomingChanged(IPF2CharacterInterface*      
 		this->SetHitPoints(NewHitPoints);
 
 		UE_LOG(
-			LogPf2CoreStatsDebug,
+			LogPf2CoreStats,
 			VeryVerbose,
 			TEXT("Damage: %s - Old HitPoints: %f, Damage: %f, New HitPoints: %f"),
 			*(TargetCharacter->GetCharacterName().ToString()),

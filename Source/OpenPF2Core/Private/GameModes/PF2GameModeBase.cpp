@@ -7,15 +7,9 @@
 
 #include "PF2CharacterInterface.h"
 #include "PF2GameStateInterface.h"
-#include "PF2QueuedActionInterface.h"
 
 #include "GameModes/PF2ModeOfPlayRuleSetInterface.h"
 #include "Utilities/PF2EnumUtilities.h"
-
-APF2GameModeBase::APF2GameModeBase()
-{
-	this->PrimaryActorTick.bCanEverTick = true;
-}
 
 TScriptInterface<IPF2ModeOfPlayRuleSetInterface> APF2GameModeBase::CreateModeOfPlayRuleSet(
 	const EPF2ModeOfPlayType ModeOfPlay)
@@ -24,8 +18,20 @@ TScriptInterface<IPF2ModeOfPlayRuleSetInterface> APF2GameModeBase::CreateModeOfP
 
 	if (this->ModeRuleSets.Contains(ModeOfPlay))
 	{
-		const UClass* const RuleSetType = this->ModeRuleSets[ModeOfPlay];
-		UObject*            NewRuleSet  = NewObject<UObject>(this, RuleSetType);
+		UClass* const RuleSetType = this->ModeRuleSets[ModeOfPlay];
+		UObject*      NewRuleSet;
+
+		// Rule sets are usually actors, but the interface doesn't strictly require them to be. We have to instantiate
+		// them appropriately, since actors have to be added to the world (so that actor callbacks like BeginPlay are
+		// invoked), while base UObjects don't.
+		if (RuleSetType->IsChildOf(AActor::StaticClass()))
+		{
+			NewRuleSet = this->GetWorld()->SpawnActor(RuleSetType);
+		}
+		else
+		{
+			NewRuleSet = NewObject<UObject>(this, RuleSetType);
+		}
 
 		RuleSetWrapper = TScriptInterface<IPF2ModeOfPlayRuleSetInterface>(NewRuleSet);
 	}
@@ -86,12 +92,11 @@ void APF2GameModeBase::RemoveCharacterFromEncounter(const TScriptInterface<IPF2C
 	}
 }
 
-FPF2QueuedActionHandle APF2GameModeBase::QueueActionForInitiativeTurn(
-	TScriptInterface<IPF2CharacterInterface>&    Character,
-	TScriptInterface<IPF2QueuedActionInterface>& Action,
-	OUT EPF2ActionQueueResult&                   OutQueueResult)
+EPF2CommandExecuteOrQueueResult APF2GameModeBase::AttemptToExecuteOrQueueCommand(
+		TScriptInterface<IPF2CharacterInterface>&        Character,
+		TScriptInterface<IPF2CharacterCommandInterface>& Command)
 {
-	FPF2QueuedActionHandle                                 Result;
+	EPF2CommandExecuteOrQueueResult                        Result;
 	const TScriptInterface<IPF2ModeOfPlayRuleSetInterface> RuleSet = this->GetModeOfPlayRuleSet();
 
 	if (RuleSet == nullptr)
@@ -99,65 +104,24 @@ FPF2QueuedActionHandle APF2GameModeBase::QueueActionForInitiativeTurn(
 		UE_LOG(
 			LogPf2CoreEncounters,
 			Error,
-			TEXT("No MoPRS is set. Performing action (%s) without queuing."),
-			*(Action->GetActionName().ToString())
+			TEXT("No MoPRS is set. Performing command (%s) without queuing."),
+			*(Command->GetCommandLabel().ToString())
 		);
 
-		Action->PerformAction();
-		OutQueueResult = EPF2ActionQueueResult::ExecutedImmediately;
+		Result =
+			IPF2CharacterCommandInterface::ImmediateResultToExecuteOrQueueResult(Command->AttemptExecuteImmediately());
 	}
 	else
 	{
 		Result =
-			IPF2ModeOfPlayRuleSetInterface::Execute_OnQueueAction(
+			IPF2ModeOfPlayRuleSetInterface::Execute_AttemptToExecuteOrQueueCommand(
 				RuleSet.GetObject(),
 				Character,
-				Action,
-				OutQueueResult
+				Command
 			);
 	}
 
 	return Result;
-}
-
-void APF2GameModeBase::CancelActionQueuedForInitiativeTurnByHandle(const FPF2QueuedActionHandle ActionHandle)
-{
-	const TScriptInterface<IPF2ModeOfPlayRuleSetInterface> RuleSet = this->GetModeOfPlayRuleSet();
-
-	if (RuleSet == nullptr)
-	{
-		UE_LOG(
-			LogPf2CoreEncounters,
-			Error,
-			TEXT("No MoPRS is set. Ignoring request to remove action (%s, handle: %d) from queue."),
-			*(ActionHandle.ActionName.ToString()),
-			ActionHandle.HandleId
-		);
-	}
-	else
-	{
-		IPF2ModeOfPlayRuleSetInterface::Execute_OnCancelQueuedActionByHandle(RuleSet.GetObject(), ActionHandle);
-	}
-}
-
-void APF2GameModeBase::CancelActionQueuedForInitiativeTurn(const TScriptInterface<IPF2CharacterInterface>&    Character,
-                                                           const TScriptInterface<IPF2QueuedActionInterface>& Action)
-{
-	const TScriptInterface<IPF2ModeOfPlayRuleSetInterface> RuleSet = this->GetModeOfPlayRuleSet();
-
-	if (RuleSet == nullptr)
-	{
-		UE_LOG(
-			LogPf2CoreEncounters,
-			Error,
-			TEXT("No MoPRS is set. Ignoring request to remove action (%s) from queue."),
-			*(Action->GetActionName().ToString())
-		);
-	}
-	else
-	{
-		IPF2ModeOfPlayRuleSetInterface::Execute_OnCancelQueuedAction(RuleSet.GetObject(), Character, Action);
-	}
 }
 
 void APF2GameModeBase::BeginPlay()
@@ -166,18 +130,6 @@ void APF2GameModeBase::BeginPlay()
 
 	// Start off in exploration mode.
 	this->AttemptModeOfPlaySwitch(EPF2ModeOfPlayType::Exploration);
-}
-
-void APF2GameModeBase::Tick(const float DeltaSeconds)
-{
-	const TScriptInterface<IPF2ModeOfPlayRuleSetInterface> RuleSet = this->GetModeOfPlayRuleSet();
-
-	Super::Tick(DeltaSeconds);
-
-	if (RuleSet != nullptr)
-	{
-		IPF2ModeOfPlayRuleSetInterface::Execute_OnTick(RuleSet.GetObject(), DeltaSeconds);
-	}
 }
 
 void APF2GameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
@@ -306,7 +258,16 @@ void APF2GameModeBase::ForceSwitchModeOfPlay(const EPF2ModeOfPlayType NewModeOfP
 
 		if (OldRuleSet != nullptr)
 		{
+			AActor* OldRuleSetActor = Cast<AActor>(OldRuleSet.GetObject());
+
 			IPF2ModeOfPlayRuleSetInterface::Execute_OnModeOfPlayEnd(OldRuleSet.GetObject(), OldModeOfPlay);
+
+			if (OldRuleSetActor != nullptr)
+			{
+				// Rule sets are usually actors, but the interface doesn't strictly require them to be. If the old rule
+				// set was implemented as an actor, then we also need to remove it from the world.
+				OldRuleSetActor->Destroy();
+			}
 		}
 
 		Pf2GameState->SwitchModeOfPlay(NewModeOfPlay, NewRuleSet);
